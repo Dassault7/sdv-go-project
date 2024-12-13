@@ -25,6 +25,7 @@ var (
 	blacklist []string
 	typeJoke  string
 	amount    uint
+	OutputUrl bool
 )
 
 // rootCmd represents the base command when called without any subcommands
@@ -37,7 +38,9 @@ This CLI will fetch a joke from the internet and display it to the user.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		parseArgs(cmd)
 		url := createUrl()
-		//cmd.Println(url)
+		if OutputUrl {
+			cmd.Println(url)
+		}
 
 		// Create a WaitGroup
 		var wg sync.WaitGroup
@@ -79,11 +82,13 @@ func Execute() {
 }
 
 func init() {
+	rootCmd.Flags().SortFlags = true
 	rootCmd.Flags().StringVarP(&lang, "lang", "l", "en", "Language of the joke")
 	rootCmd.Flags().StringVarP(&category, "category", "c", "any", "Category of the joke")
 	rootCmd.Flags().StringSliceVarP(&blacklist, "blacklist", "b", []string{}, "Blacklist of categories")
 	rootCmd.Flags().UintVarP(&amount, "amount", "a", 1, "Amount of jokes to fetch")
 	rootCmd.Flags().StringVarP(&typeJoke, "type", "t", "", "Type of joke to fetch")
+	rootCmd.Flags().BoolVarP(&OutputUrl, "output-url", "o", false, "Output the URL to fetch the joke")
 }
 
 // exitIfNotValid checks if the value is in the expected values
@@ -118,19 +123,24 @@ func parseArgs(cmd *cobra.Command) {
 // createUrl creates the URL to fetch the joke
 func createUrl() string {
 	url := fmt.Sprintf("%s/%s", URL, category)
+	var args []string
+
 	if lang != "en" {
-		url += "?lang=" + lang
+		args = append(args, "lang="+lang)
 	}
 
 	if len(blacklist) > 0 {
 		blacklistFlags := strings.Join(blacklist, ",")
-		url += "&blacklistFlags=" + blacklistFlags
+		args = append(args, "blacklistFlags="+blacklistFlags)
 	}
 
 	if typeJoke != "" {
-		url += "&type=" + typeJoke
+		args = append(args, "type="+typeJoke)
 	}
 
+	if len(args) > 0 {
+		url += "?" + strings.Join(args, "&")
+	}
 	return url
 }
 
