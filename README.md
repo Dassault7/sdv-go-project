@@ -1,186 +1,98 @@
-# Projet d'API de ToDoList
+# get-joke
 
-Ce projet est une API REST de gestion de ToDoList multi-utilisateur, construite avec **Go** et les modules suivants :
+`get-joke` est une application CLI écrite en Go qui permet de récupérer des blagues depuis [JokeAPI](https://v2.jokeapi.dev/). L'utilisateur peut personnaliser les blagues récupérées en fonction de plusieurs paramètres comme la langue, la catégorie, le nombre de blagues, et bien plus.
 
-- **Fiber** : framework web rapide et minimaliste
-- **Gorm** : ORM pour interagir avec PostgreSQL
-- **Swagger** : documentation interactive de l'API
-- **Logrus** : gestion avancée des logs
-- **PostgreSQL** : base de données relationnelle
-
-## Fonctionnalités principales
-- **Gestion des utilisateurs** :
-    - Création d'un utilisateur avec un mot de passe.
-    - Connexion pour récupérer un token JWT.
-- **Gestion des ToDoLists** :
-    - Ajout, modification et suppression de tâches.
-    - Un utilisateur peut uniquement accéder à ses propres tâches.
-
----
-
-## Prérequis
-- Docker et Docker Compose
-
-### Variables d'environnement
-Créez un fichier `.env` à la racine du projet avec les variables suivantes :
-
-```
-DB_HOST=db
-DB_PORT=5432
-DB_USER=postgres
-DB_PASSWORD=yourpassword
-DB_NAME=todolist_db
-JWT_SECRET=your_jwt_secret
-```
-
----
+Le résultat est affiché dans la console.
 
 ## Installation
-1. Clonez le dépôt :
-   ```bash
-   git ...
-   cd ...
-   ```
 
-2. Lancez l'application avec Docker Compose :
-   ```bash
-   docker-compose up --build
-   ```
+Pour installer `get-joke`, il suffit de cloner le dépôt et de lancer la commande suivante :
 
-3. Accédez à la documentation Swagger :
-   [http://localhost:3000/swagger/index.html](http://localhost:3000/swagger/index.html)
-
----
-
-## Routes de l'API
-
-### Authentification
-
-#### 1. Créer un utilisateur
-**POST** `/api/v1/auth/register`
-
-Body JSON :
-```json
-{
-  "username": "example_user",
-  "password": "example_password"
-}
+```bash
+go build -o build/get-joke
 ```
 
-Réponse :
-```json
-{
-  "message": "User registered successfully"
-}
+Pour utiliser `get-joke` depuis n'importe où, il faut ajouter le chemin du dossier `build` dans la variable d'environnement `PATH`.
+
+
+## Fonctionnalités
+
+- Récupération de blagues depuis JokeAPI
+- Personnalisation des blagues récupérées
+- Affichage des blagues récupérées
+
+### Commandes
+
+Pour avoir une blague aléatoire, on utilise la commande suivante :
+
+```bash
+get-joke
 ```
 
-#### 2. Se connecter
-**POST** `/api/v1/auth/login`
+Voici les options disponibles (aucune option n'est obligatoire) :
 
-Body JSON :
-```json
-{
-  "username": "example_user",
-  "password": "example_password"
-}
+- `--amount | -a` : Nombre de blagues à récupérer (par défaut : `1`)
+- `--blacklist | -b` : Liste des catégories à exclure (par défaut : `none`). Possible : `nsfw`, `religious`, `political`, `racist`, `sexist`, `explicit`
+- `--category | -c` : Catégorie de la blague (par défaut : `any`). Possible : `any`, `misc`, `programming`, `pun`, `spooky`, `christmas`
+- `--help | -h` : Affiche l'aide
+- `--lang | -l` : Langue de la blague (par défaut : `en`). Possible : `en`, `fr`, `de`, `es`, `cs`, `pt`
+- `--output-url | -o` : Affiche l'URL de la requête
+- `--type | -t` : Type de blague. (par défaut `none`). Possible : `single`, `twopart`
+
+Exemple :
+
+```bash
+get-joke -o -a 2 -l de -c programming -b racist
 ```
 
-Réponse :
-```json
-{
-  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-}
+On peux voir les options disponibles avec la commande suivante :
+
+```bash
+get-joke --help
 ```
 
----
+Les valeurs pour les options sont sensibles à la casse. On peut les obtenir en utilisant la commande:
 
-### Gestion des ToDo
-**Toutes les routes suivantes nécessitent un header d'authentification :**
-```http
-Authorization: Bearer <token>
+```bash
+get-joke list <command>
 ```
 
-#### 1. Récupérer toutes les tâches
-**GET** `/api/v1/todos`
+Exemple :
 
-Réponse :
-```json
-[
-  {
-    "id": 1,
-    "title": "Acheter du pain",
-    "description": "Aller à la boulangerie",
-    "completed": false
-  }
-]
+```bash
+get-joke list language  # Alias: lang, l
+get-joke list categories  # Alias: category, cat, c
+get-joke list blacklist  # Alias: black, bl, b
+get joke list types  # Alias: type, t
 ```
 
-#### 2. Créer une tâche
-**POST** `/api/v1/todos`
+## Explications
 
-Body JSON :
-```json
-{
-  "title": "Acheter du lait",
-  "description": "Passer au supermarché",
-  "completed": false
-}
-```
+Projet réalisé dans le cadre de l'évaluation du module de programmation en Go.
+J'ai utilisé toutes les bases vues en cours pour réaliser ce projet.
 
-Réponse :
-```json
-{
-  "message": "Task created successfully",
-  "task": {
-    "id": 2,
-    "title": "Acheter du lait",
-    "description": "Passer au supermarché",
-    "completed": false
-  }
-}
-```
+- Gestion des erreurs
+- Tests unitaires
+- Requêtes HTTP
+- Goroutines
 
-#### 3. Modifier une tâche
-**PUT** `/api/v1/todos/:id`
+J'ai pris la liberté d'ajouter une couche CLI pour rendre l'application plus interactive, 
+en utilisant la librairie [Cobra](https://cobra.dev/).  
+Cette librairie permet de créer des applications CLI de manière simple et rapide, avec la gestion des flags et des arguments.
 
-Body JSON :
-```json
-{
-  "title": "Acheter des oeufs",
-  "description": "Pour faire une omelette",
-  "completed": true
-}
-```
 
-Réponse :
-```json
-{
-  "message": "Task updated successfully"
-}
-```
 
-#### 4. Supprimer une tâche
-**DELETE** `/api/v1/todos/:id`
+### Sources
 
-Réponse :
-```json
-{
-  "message": "Task deleted successfully"
-}
-```
+- [JokeAPI](https://v2.jokeapi.dev/)
+- [Chanel](https://www.youtube.com/watch?v=nNXhePi3xwE)
+- [Cobra](https://umarcor.github.io/cobra/)
 
----
+### Remarques
 
-## Authentification JWT
-L'API utilise des tokens JWT pour authentifier les utilisateurs. Lorsqu'un utilisateur se connecte, il reçoit un token qu'il doit inclure dans le header `Authorization` pour accéder aux routes protégées.
+Utilisation d'IA pour comprendre plus facilement des concepts de Go. (Goroutines, Channels, etc.)  
+Mais _ce projet n'a pas de code source venant d'IA_.
 
-### Exemple d'usage
-Header HTTP :
-```http
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
-```
+## Auteurs
 
----
-
-## Journalisation (Logging)
-**Logrus** est utilisé pour gérer les logs de l'application. Les différents niveaux de logs (info, warning, error) permettent de suivre les activités et débugger efficacement.
+Développé par [Jarod Guichard](https://github.com/Dassault7).
